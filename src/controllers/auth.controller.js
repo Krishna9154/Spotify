@@ -50,8 +50,56 @@ async function registerUser(req, res) {
 
     }
 
+}
+
+async function loginUser(req, res) {
+
+    const { username, email, password } = req.body;
+
+    const User = await userModel.findOne({
+        $or: [
+            { username },
+            { email }
+        ]
+    })
+    
+
+    if (!User) {
+        return res.status(401).json({
+            message: 'Invalid Credencials'
+        })
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, User.password)
+
+    if (!isPasswordValid) {
+        return res.status(401).json({
+            message: 'Invalid Credencials'
+        })
+
+    }
+
+    const token = jwt.sign(
+        {
+        id:User._id,
+        role:User.role
+        },
+        process.env.JWT_SECRET)
+
+    res.cookie('token',token)
+
+    return res.status(200).json({
+        message:"User is Login Successfully",
+        User:{
+            username:User.username,
+            email:User.email,
+            role:User.role
+
+        }
+    })
+
 
 
 }
 
-module.exports = { registerUser }
+module.exports = { registerUser, loginUser }
